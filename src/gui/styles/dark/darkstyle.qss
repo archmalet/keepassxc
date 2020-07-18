@@ -8,6 +8,11 @@ EntryPreviewWidget QLineEdit:disabled, EntryPreviewWidget QTextEdit:disabled {
     background-color: #424242;
 }
 
+QPushButton:default:hover {
+    /* Using slightly lighter shade from palette(highlight) */
+    background: #306030;
+}
+
 QToolTip {
     color: #BFBFBF;
     background-color: #2D532D;

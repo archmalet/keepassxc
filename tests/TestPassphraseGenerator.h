@@ -27,6 +27,7 @@ class TestPassphraseGenerator : public QObject
 private slots:
     void initTestCase();
     void testWordCase();
+    void testSpecials();
 };
 
 #endif // KEEPASSXC_TESTPASSPHRASEGENERATOR_H

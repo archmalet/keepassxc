@@ -25,9 +25,6 @@
 class PassphraseGenerator
 {
 public:
-    PassphraseGenerator();
-    Q_DISABLE_COPY(PassphraseGenerator)
-
     enum PassphraseWordCase
     {
         LOWERCASE,
@@ -35,10 +32,33 @@ public:
         TITLECASE
     };
 
+    enum WordClass
+    {
+        Words = (1 << 0),
+        Numbers = (1 << 1),
+        Special = (1 << 3),
+        DefaultWordset = Words
+    };
+    Q_DECLARE_FLAGS(WordClasses, WordClass)
+
+    enum GeneratorFlag
+    {
+        ExcludeLookAlike = (1 << 0),
+        DefaultFlags = ExcludeLookAlike
+    };
+    Q_DECLARE_FLAGS(GeneratorFlags, GeneratorFlag)
+
+public:
+    PassphraseGenerator();
+    Q_DISABLE_COPY(PassphraseGenerator)
+
     double estimateEntropy(int wordCount = 0);
     void setWordCount(int wordCount);
     void setWordList(const QString& path);
     void setWordCase(PassphraseWordCase wordCase);
+    void setWordClasses(const WordClasses& classes);
+    void setDigitCount(int digitCount);
+    void setFlags(const GeneratorFlags& flags);
     void setDefaultWordList();
     void setWordSeparator(const QString& separator);
     bool isValid() const;
@@ -46,14 +66,23 @@ public:
     QString generatePassphrase() const;
 
     static constexpr int DefaultWordCount = 7;
+    static constexpr int DefaultDigitCount = 3;
     static const char* DefaultSeparator;
     static const char* DefaultWordList;
 
 private:
+    QChar generateDigit() const;
+    QChar generateSpecial() const;
+
     int m_wordCount;
+    int m_digitCount;
+    WordClasses m_classes;
+    GeneratorFlags m_flags;
     PassphraseWordCase m_wordCase;
     QString m_separator;
     QVector<QString> m_wordlist;
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(PassphraseGenerator::WordClasses)
 
 #endif // KEEPASSX_PASSPHRASEGENERATOR_H

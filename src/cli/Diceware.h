@@ -29,6 +29,9 @@ public:
 
     static const QCommandLineOption WordCountOption;
     static const QCommandLineOption WordListOption;
+    static const QCommandLineOption NumberOption;
+    static const QCommandLineOption SpecialOption;
+    static const QCommandLineOption DigitCountOption;
 };
 
 #endif // KEEPASSXC_DICEWARE_H

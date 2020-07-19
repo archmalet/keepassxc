@@ -52,3 +52,54 @@ void TestPassphraseGenerator::testWordCase()
     QRegularExpression regex("^([A-Z][a-z]* ?)+$");
     QVERIFY(regex.match(passphrase).hasMatch());
 }
+
+void TestPassphraseGenerator::testSpecials()
+{
+    PassphraseGenerator generator;
+    // Needs to be distinguishable from special symbols and words
+    generator.setWordSeparator(" ");
+
+    QRegularExpression wregex(" ([A-Z]|[a-z])+ ");
+    QRegularExpression dregex(" \\d+ ");
+    QString spattern = " (" + QRegularExpression::escape("!") + "|" + QRegularExpression::escape(",") + "|"
+                       + QRegularExpression::escape(".") + "|" + QRegularExpression::escape(":") + "|"
+                       + QRegularExpression::escape(";") + ") ";
+    QRegularExpression pregex(spattern);
+
+    // All classes
+    generator.setWordClasses(PassphraseGenerator::Words | PassphraseGenerator::Numbers | PassphraseGenerator::Special);
+    QVERIFY(generator.isValid());
+
+    QString passphrase;
+    passphrase = generator.generatePassphrase();
+    QVERIFY2(wregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(dregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(pregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+
+    // Words+Numbers
+    generator.setWordClasses(PassphraseGenerator::Words | PassphraseGenerator::Numbers);
+    QVERIFY(generator.isValid());
+
+    passphrase = generator.generatePassphrase();
+    QVERIFY2(wregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(dregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(!pregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+
+    // Words+Punctuation
+    generator.setWordClasses(PassphraseGenerator::Words | PassphraseGenerator::Special);
+    QVERIFY(generator.isValid());
+
+    passphrase = generator.generatePassphrase();
+    QVERIFY2(wregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(!dregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(pregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+
+    // Words only
+    generator.setWordClasses(PassphraseGenerator::Words);
+    QVERIFY(generator.isValid());
+
+    passphrase = generator.generatePassphrase();
+    QVERIFY2(wregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(!dregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+    QVERIFY2(!pregex.match(" " + passphrase + " ").hasMatch(), qPrintable(passphrase));
+}

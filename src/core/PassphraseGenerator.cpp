@@ -29,22 +29,39 @@ const char* PassphraseGenerator::DefaultWordList = "eff_large.wordlist";
 
 PassphraseGenerator::PassphraseGenerator()
     : m_wordCount(DefaultWordCount)
+    , m_digitCount(DefaultDigitCount)
+    , m_classes(nullptr)
+    , m_flags(nullptr)
     , m_wordCase(LOWERCASE)
     , m_separator(DefaultSeparator)
 {
     setDefaultWordList();
 }
 
+//TODO: Change this method to use internal wordCount
 double PassphraseGenerator::estimateEntropy(int wordCount)
 {
+    // TODO: Add Special options
     if (m_wordlist.isEmpty()) {
         return 0.0;
     }
     if (wordCount < 1) {
         wordCount = m_wordCount;
     }
+    double entropy = std::log2(m_wordlist.size()) * wordCount;
 
-    return std::log2(m_wordlist.size()) * wordCount;
+    if (m_classes & Numbers) {
+        QVector<QChar> digits;
+        for (int i = 48; i < (48 + 10); i++) {
+            if ((m_flags & ExcludeLookAlike) && (i == 48 || i == 49)) { // "0" and "1"
+                continue;
+            }
+            digits.append(i);
+        }
+        entropy += std::log2(digits.size()) * m_wordCount;
+    }
+
+    return entropy;
 }
 
 void PassphraseGenerator::setWordCount(int wordCount)
@@ -55,6 +72,26 @@ void PassphraseGenerator::setWordCount(int wordCount)
 void PassphraseGenerator::setWordCase(PassphraseWordCase wordCase)
 {
     m_wordCase = wordCase;
+}
+
+void PassphraseGenerator::setWordClasses(const WordClasses& classes)
+{
+    // TODO: Prevent from setting without Words
+    if (classes == 0) {
+        m_classes = DefaultWordset;
+        return;
+    }
+    m_classes = classes;
+}
+
+void PassphraseGenerator::setDigitCount(int digitCount)
+{
+    m_digitCount = qMax(1, digitCount);
+}
+
+void PassphraseGenerator::setFlags(const GeneratorFlags& flags)
+{
+    m_flags = flags;
 }
 
 void PassphraseGenerator::setWordList(const QString& path)
@@ -120,6 +157,21 @@ QString PassphraseGenerator::generatePassphrase() const
         words.append(tmpWord);
     }
 
+    if (m_classes & Numbers) {
+        QString number;
+        for (int i = 0; i < m_digitCount; ++i) {
+            number.append(generateDigit());
+        }
+        int insertIndex = randomGen()->randomUInt(static_cast<quint32>(words.length()+1));
+        // TODO: Check for off by one
+        words.insert(insertIndex, number);
+    }
+    if (m_classes & Special) {
+        int insertIndex = randomGen()->randomUInt(static_cast<quint32>(words.length()+1));
+        // TODO: Check for off by one
+        words.insert(insertIndex, QString(generateSpecial()));
+    }
+
     return words.join(m_separator);
 }
 
@@ -130,4 +182,29 @@ bool PassphraseGenerator::isValid() const
     }
 
     return m_wordlist.size() >= 1000;
+}
+
+QChar PassphraseGenerator::generateDigit() const
+{
+    QVector<QChar> digits;
+    for (int i = 48; i < (48 + 10); i++) {
+        if ((m_flags & ExcludeLookAlike) && (i == 48 || i == 49)) { // "0" and "1"
+            continue;
+        }
+        digits.append(i);
+    }
+    int index = randomGen()->randomUInt(static_cast<quint32>(digits.length()));
+    return digits.at(index);
+}
+
+QChar PassphraseGenerator::generateSpecial() const
+{
+    QVector<QChar> specials;
+    specials.append(33); //!
+    specials.append(44); //,
+    specials.append(46); //.
+    specials.append(58); //:
+    specials.append(59); //;
+    int index = randomGen()->randomUInt(static_cast<quint32>(specials.length()));
+    return specials.at(index);
 }

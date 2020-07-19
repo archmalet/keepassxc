@@ -36,12 +36,31 @@ const QCommandLineOption Diceware::WordListOption =
                        QObject::tr("Wordlist for the diceware generator.\n[Default: EFF English]"),
                        QObject::tr("path"));
 
+const QCommandLineOption Diceware::NumberOption =
+    QCommandLineOption(QStringList() << "n"
+                                     << "number",
+                       QObject::tr("Include a number in the diceware passphrase."));
+
+const QCommandLineOption Diceware::DigitCountOption =
+    QCommandLineOption(QStringList() << "N"
+                                     << "digits",
+                       QObject::tr("Number of digits for the included number."),
+                       QObject::tr("count", "CLI parameter"));
+
+const QCommandLineOption Diceware::SpecialOption =
+    QCommandLineOption(QStringList() << "s"
+                                     << "special",
+                       QObject::tr("Include a special character in the diceware passphrase."));
+
 Diceware::Diceware()
 {
     name = QString("diceware");
     description = QObject::tr("Generate a new random diceware passphrase.");
     options.append(Diceware::WordCountOption);
     options.append(Diceware::WordListOption);
+    options.append(Diceware::NumberOption);
+    options.append(Diceware::DigitCountOption);
+    options.append(Diceware::SpecialOption);
 }
 
 int Diceware::execute(const QStringList& arguments)
@@ -71,6 +90,28 @@ int Diceware::execute(const QStringList& arguments)
         dicewareGenerator.setWordList(wordListFile);
     }
 
+    PassphraseGenerator::WordClasses classes = PassphraseGenerator::Words;
+    QString digitCount = parser->value(Diceware::DigitCountOption);
+
+    if (parser->isSet(Diceware::NumberOption)) {
+        classes |= PassphraseGenerator::Numbers;
+    }
+    if (parser->isSet(Diceware::SpecialOption)) {
+        classes |= PassphraseGenerator::Special;
+    }
+
+    if (digitCount.isEmpty()) {
+        dicewareGenerator.setDigitCount(PassphraseGenerator::DefaultDigitCount);
+    } else if (digitCount.toInt() <= 0) {
+        err << QObject::tr("Invalid digit count %1").arg(digitCount) << endl;
+        return EXIT_FAILURE;
+    } else {
+        // Activate numbers anyway if digitCount is given
+        classes |= PassphraseGenerator::Numbers;
+        dicewareGenerator.setDigitCount(digitCount.toInt());
+    }
+    dicewareGenerator.setWordClasses(classes);
+
     if (!dicewareGenerator.isValid()) {
         // We already validated the word count input so if the generator is invalid, it
         // must be because the word list is too small.
@@ -80,6 +121,7 @@ int Diceware::execute(const QStringList& arguments)
 
     QString password = dicewareGenerator.generatePassphrase();
     out << password << endl;
+    out << "Estimated Entropy: " << dicewareGenerator.estimateEntropy() << endl;
 
     return EXIT_SUCCESS;
 }

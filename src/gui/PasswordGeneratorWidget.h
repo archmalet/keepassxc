@@ -74,6 +74,7 @@ private slots:
 
     void passwordLengthChanged(int length);
     void passphraseLengthChanged(int length);
+    void digitLengthChanged(int length);
     void colorStrengthIndicator(const PasswordHealth& health);
 
     void updateGenerator();
@@ -82,7 +83,9 @@ private:
     bool m_standalone = false;
 
     PasswordGenerator::CharClasses charClasses();
-    PasswordGenerator::GeneratorFlags generatorFlags();
+    PasswordGenerator::GeneratorFlags passwordGeneratorFlags();
+    PassphraseGenerator::WordClasses wordClasses();
+    PassphraseGenerator::GeneratorFlags passphraseGeneratorFlags();
 
     const QScopedPointer<PasswordGenerator> m_passwordGenerator;
     const QScopedPointer<PassphraseGenerator> m_dicewareGenerator;

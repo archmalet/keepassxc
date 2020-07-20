@@ -71,6 +71,9 @@ PasswordGeneratorWidget::PasswordGeneratorWidget(QWidget* parent)
     connect(m_ui->sliderWordCount, SIGNAL(valueChanged(int)), SLOT(passphraseLengthChanged(int)));
     connect(m_ui->spinBoxWordCount, SIGNAL(valueChanged(int)), SLOT(passphraseLengthChanged(int)));
 
+    connect(m_ui->sliderDigitCount, SIGNAL(valueChanged(int)), SLOT(digitLengthChanged(int)));
+    connect(m_ui->spinBoxDigitCount, SIGNAL(valueChanged(int)), SLOT(digitLengthChanged(int)));
+
     connect(m_ui->editWordSeparator, SIGNAL(textChanged(QString)), SLOT(updateGenerator()));
     connect(m_ui->comboBoxWordList, SIGNAL(currentIndexChanged(int)), SLOT(updateGenerator()));
     connect(m_ui->optionButtons, SIGNAL(buttonClicked(int)), SLOT(updateGenerator()));
@@ -311,6 +314,20 @@ void PasswordGeneratorWidget::passphraseLengthChanged(int length)
     updateGenerator();
 }
 
+void PasswordGeneratorWidget::digitLengthChanged(int length)
+{
+    m_ui->spinBoxDigitCount->blockSignals(true);
+    m_ui->sliderDigitCount->blockSignals(true);
+
+    m_ui->spinBoxDigitCount->setValue(length);
+    m_ui->sliderDigitCount->setValue(length);
+
+    m_ui->spinBoxDigitCount->blockSignals(false);
+    m_ui->sliderDigitCount->blockSignals(false);
+
+    updateGenerator();
+}
+
 void PasswordGeneratorWidget::setPasswordVisible(bool visible)
 {
     m_ui->editNewPassword->setShowPassword(visible);
@@ -462,7 +479,7 @@ PasswordGenerator::CharClasses PasswordGeneratorWidget::charClasses()
     return classes;
 }
 
-PasswordGenerator::GeneratorFlags PasswordGeneratorWidget::generatorFlags()
+PasswordGenerator::GeneratorFlags PasswordGeneratorWidget::passwordGeneratorFlags()
 {
     PasswordGenerator::GeneratorFlags flags;
 
@@ -479,11 +496,37 @@ PasswordGenerator::GeneratorFlags PasswordGeneratorWidget::generatorFlags()
     return flags;
 }
 
+PassphraseGenerator::WordClasses PasswordGeneratorWidget::wordClasses()
+{
+    PassphraseGenerator::WordClasses classes = PassphraseGenerator::Words;
+
+    if (m_ui->spinBoxDigitCount->value() > 0) {
+        classes |= PassphraseGenerator::Numbers;
+    }
+
+    if (m_ui->checkBoxSpecialPhrase->isChecked()) {
+        classes |= PassphraseGenerator::Special;
+    }
+
+    return classes;
+}
+
+PassphraseGenerator::GeneratorFlags PasswordGeneratorWidget::passphraseGeneratorFlags()
+{
+    PassphraseGenerator::GeneratorFlags flags;
+
+    if (m_ui->checkBoxExcludeAlikePhrase->isChecked()) {
+        flags |= PassphraseGenerator::ExcludeLookAlike;
+    }
+
+    return flags;
+}
+
 void PasswordGeneratorWidget::updateGenerator()
 {
     if (m_ui->tabWidget->currentIndex() == Password) {
         auto classes = charClasses();
-        auto flags = generatorFlags();
+        auto flags = passwordGeneratorFlags();
 
         int length = 0;
         if (flags.testFlag(PasswordGenerator::CharFromEveryGroup)) {
@@ -540,8 +583,13 @@ void PasswordGeneratorWidget::updateGenerator()
         m_ui->clearInclude->setVisible(!m_ui->editAdditionalChars->text().isEmpty());
         m_ui->clearExclude->setVisible(!m_ui->editExcludedChars->text().isEmpty());
     } else {
+        auto classes = wordClasses();
+        auto flags = passphraseGeneratorFlags();
+
+
         m_dicewareGenerator->setWordCase(
             static_cast<PassphraseGenerator::PassphraseWordCase>(m_ui->wordCaseComboBox->currentData().toInt()));
+        m_dicewareGenerator->setFlags(flags);
 
         m_dicewareGenerator->setWordCount(m_ui->spinBoxWordCount->value());
         if (!m_ui->comboBoxWordList->currentText().isEmpty()) {
@@ -549,6 +597,13 @@ void PasswordGeneratorWidget::updateGenerator()
             m_dicewareGenerator->setWordList(path);
         }
         m_dicewareGenerator->setWordSeparator(m_ui->editWordSeparator->text());
+
+        if (m_ui->spinBoxDigitCount->value() > 0) {
+            m_dicewareGenerator->setWordClasses(classes | PassphraseGenerator::Numbers);
+        } else {
+            m_dicewareGenerator->setWordClasses(classes & ~PassphraseGenerator::Numbers);
+        }
+        m_dicewareGenerator->setDigitCount(m_ui->spinBoxDigitCount->value());
 
         if (m_dicewareGenerator->isValid()) {
             m_ui->buttonGenerate->setEnabled(true);

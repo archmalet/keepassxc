@@ -38,7 +38,7 @@ PassphraseGenerator::PassphraseGenerator()
     setDefaultWordList();
 }
 
-//TODO: Change this method to use internal wordCount
+// TODO: Change this method to use internal wordCount
 double PassphraseGenerator::estimateEntropy(int wordCount)
 {
     // TODO: Add Special options and review additivity
@@ -162,12 +162,12 @@ QString PassphraseGenerator::generatePassphrase() const
         for (int i = 0; i < m_digitCount; ++i) {
             number.append(generateDigit());
         }
-        int insertIndex = randomGen()->randomUInt(static_cast<quint32>(words.length()+1));
+        int insertIndex = randomGen()->randomUInt(static_cast<quint32>(words.length() + 1));
         // TODO: Check for off by one
         words.insert(insertIndex, number);
     }
     if (m_classes & Special) {
-        int insertIndex = randomGen()->randomUInt(static_cast<quint32>(words.length()+1));
+        int insertIndex = randomGen()->randomUInt(static_cast<quint32>(words.length() + 1));
         // TODO: Check for off by one
         words.insert(insertIndex, QString(generateSpecial()));
     }
@@ -188,7 +188,7 @@ QChar PassphraseGenerator::generateDigit() const
 {
     QVector<QChar> digits;
     for (int i = 48; i < (48 + 10); i++) {
-        //ExcludeLookAlike doesn't work
+        // ExcludeLookAlike doesn't work
         if ((m_flags & ExcludeLookAlike) && (i == 48 || i == 49)) { // "0" and "1"
             continue;
         }

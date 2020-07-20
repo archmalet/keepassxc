@@ -586,7 +586,6 @@ void PasswordGeneratorWidget::updateGenerator()
         auto classes = wordClasses();
         auto flags = passphraseGeneratorFlags();
 
-
         m_dicewareGenerator->setWordCase(
             static_cast<PassphraseGenerator::PassphraseWordCase>(m_ui->wordCaseComboBox->currentData().toInt()));
         m_dicewareGenerator->setFlags(flags);
